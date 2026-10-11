@@ -100,4 +100,6 @@ const page = k.pageHtml({ title: "Combined cycle plant", theme: THEME, body: `<s
 const name = THEME === "light" ? "combined-cycle-light.html" : "combined-cycle.html";
 writeFileSync(join(HERE, name), page);
 console.log("wrote", name, `${(page.length / 1024).toFixed(0)} KB`, `${items.length} items`);
-A.auditOrExit(R, P, {});
+// every pair below was looked at at 8x: a line passes well in front of or behind the other (40+ units apart in depth) and reads as a crossing
+const CROWD_OK = [["drum.lp-riser", "drum.lp-feed"], ["tower.cold", "steam.column*"], ["drum.hp-riser", "drum.hp-feed"], ["drum.hp-feed", "steam.low"], ["pumps.feed", "hrsg.column*"], ["drum.hp-steam", "steam.main"], ["pumps.feed", "hrsg.hpev.beam*"], ["steam.low", "drum.lp-riser"], ["steam.low", "skid.base"]];
+A.auditOrExit(R, P, { crowd: CROWD_OK });

@@ -5,7 +5,7 @@ export const ELEVATION = 30;
 export const W = 1280;
 export const H = 940;
 
-export const PLINTH = { x: -440, y: -236, w: 920, d: 500, r: 12 };
+export const PLINTH = { x: -440, y: -236, w: 920, d: 530, r: 12 };
 export const PLINTH_H = 16;
 export const FOOT_H = 8;
 
@@ -14,8 +14,8 @@ export const GT_Y = -92;
 export const GT_Z = 64;
 export const GT = {
   gen: [-352, -262],
-  plenum: [-262, -216],
-  comp: [-216, -118],
+  plenum: [-246, -200],
+  comp: [-200, -118],
   comb: [-118, -48],
   turb: [-48, 34],
   diffuser: [34, 104],
@@ -31,7 +31,7 @@ export const BANKS = [
   { id: "lpev", name: "LP evaporator", x0: 286, x1: 320 },
   { id: "pre", name: "Condensate preheater", x0: 328, x1: 362 },
 ];
-export const STACK = { x: 388, y: GT_Y, r: 17, z0: HRSG.h, z1: 330 };
+export const STACK = { x: 388, y: GT_Y, r: 17, z0: HRSG.h, z1: 342 };
 
 // steam-turbine train (front row), on a table-top pedestal
 export const ST_Y = 176;
@@ -42,6 +42,7 @@ export const ST = {
   gen: [100, 190],
 };
 export const DECK_Z = 64;
+export const PUMP_ZC = [15, 15.6];
 export const CONDENSER = { x: 22, y: ST_Y - 40, w: 70, d: 80, z0: 4, z1: 54 };
 
 // cooling tower, control room, transformers

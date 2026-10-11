@@ -15,7 +15,7 @@ export function gasTurbine(C) {
   const SEE = [-70 * DEG, 140 * DEG]; // blade angles that can be seen from the camera
 
   // ---- base skid ---------------------------------------------------------------------------------------------
-  const SKID = { x: g.gen[0] - 24, y: Y - 56, w: g.diffuser[1] - g.gen[0] + 44, d: 112, r: 3 };
+  const SKID = { x: g.gen[0] - 24, y: Y - 56, w: g.diffuser[1] - (g.gen[0] - 24), d: 112, r: 3 };
   slabAt("skid", SKID, 0, SKID_TOP, { tone: "lo" }, {
     name: "skid.base",
     bevel: 1.2,
@@ -27,7 +27,7 @@ export function gasTurbine(C) {
   // a pedestal under a casing: narrow, with its top following the casing's lowest line so the two touch all along
   const pedestal = (name, x0, x1, rOf) => {
     const half = 9;
-    const topAt = (x) => Z - Math.sqrt(Math.max(1, rOf(x) ** 2 - half ** 2));
+    const topAt = (x) => Z - rOf(x);
     const poly = [[x0, Y - half], [x1, Y - half], [x1, Y + half], [x0, Y + half]];
     const tops = [topAt(x0), topAt(x1), topAt(x1), topAt(x0)];
     const faces = prismFaces(poly, SKID_TOP, tops);
@@ -83,7 +83,8 @@ export function gasTurbine(C) {
   flatPedestal("exciter", g0 - 17, g0 - 3, Z - 17, 10);
 
   // ---- shaft and coupling between the generator and the inlet plenum ------------------------------------------------
-  turned("gen", frameAt(g1), [[0, 0], [0, 10], [g.plenum[0] - g1 + 2, 10], [g.plenum[0] - g1 + 2, 0]], { tone: "hi" }, { name: "gen.shaft", bias: -0.5 });
+  turned("gen", frameAt(g1), [[0, 0], [0, 10], [3, 10], [3, 0]], { tone: "hi" }, { name: "gen.shaft", bias: -0.5 });
+  turned("gen", frameAt(g1 + 10), [[0, 0], [0, 10], [g.plenum[0] - g1 - 10, 10], [g.plenum[0] - g1 - 10, 0]], { tone: "hi" }, { name: "gen.shaft", bias: -0.5 });
   const CF = frameAt(g1 + 3);
   turned("gen", CF, [[0, 0], [0, 14], [7, 14], [7, 0]], { tone: "mid" }, { name: "gen.coupling", extra: spin({ kind: "dots", F: CF, s: 7, r: 12, count: 10, all: false, group: "gt" }).replace("cc-dot", "cc-dot cc-dot-hi"), bias: 0.2, inner: G.arcOf(CF, 3.5, 14, P) });
 
@@ -100,7 +101,7 @@ export function gasTurbine(C) {
   const NECK = { x: p0 + 4, y: Y - 22, w: p1 - p0 - 8, d: 44, r: 4 };
   slabAt("intake", NECK, Z + 38, 20, { tone: "mid" }, { name: "intake.neck", bevel: 0.8, extra: Ln(k.planOutline(k.insetPlan(NECK, 2.5), Z + 58, P, 3), { tone: "faint" }) });
   const FH = L.FILTER;
-  const DUCT = { x: p0 + 4, y: FH.y + FH.d - 1, w: p1 - p0 - 8, d: Y + 22 - (FH.y + FH.d - 1), r: 4 };
+  const DUCT = { x: p0 + 4, y: FH.y + FH.d, w: p1 - p0 - 8, d: Y + 22 - (FH.y + FH.d), r: 4 };
   slabAt("intake", DUCT, Z + 58, 26, { tone: "mid" }, {
     name: "intake.duct",
     bevel: 0.8,
@@ -126,7 +127,7 @@ export function gasTurbine(C) {
   const [c0, c1] = g.comp;
   const FC = frameAt(c0);
   const rc = (s) => 35 - 7 * (s / (c1 - c0));
-  const rings = [10, 30, 50, 70, 88];
+  const rings = [8, 28, 46, 62, 76];
   const compProfile = [[0, 0], [0, 33.5]];
   for (let i = 0; i <= 10; i++) {
     const s = (i / 10) * (c1 - c0);
@@ -141,7 +142,7 @@ export function gasTurbine(C) {
     const rotor = S(G.solidOf([[s0 - 2, drum(s0)], [s1 + 2, drum(s1)]], FC, P), { tone: "hi" });
     return windowOn({ F: FC, s0, s1, r: (s) => rc(s) - 0.4, aMid, aHalf, name, content: rotor + stage.join("") });
   };
-  const compWindow = cav(24, 84, 22 * DEG, 32 * DEG, "comp", Array.from({ length: 8 }, (_, i) => 28 + i * 7.6), (s) => 19 + s * 0.02, 29, 22);
+  const compWindow = cav(18, 70, 22 * DEG, 32 * DEG, "comp", Array.from({ length: 8 }, (_, i) => 22 + i * 6.4), (s) => 19 + s * 0.02, 29, 22);
   turned("comp", FC, compProfile, {}, { name: "comp.casing", tone: "mid", extra: compWindow + rings.map((s) => Ln(G.arcOf(FC, s, rc(s), P, { slope: -7 / (c1 - c0) }), { tone: "faint" })).join("") });
   pedestal("comp", c0 + 8, c1 - 8, (x) => rc(x - c0));
 
@@ -154,6 +155,7 @@ export function gasTurbine(C) {
   pedestal("comb", b0 + 8, b1 - 8, () => RB);
   const canS = 28;
   const canAngles = [-30, 0, 30, 60, 90, 120, 150].map((a) => a * DEG);
+  C.cans = [];
   for (const a of canAngles) {
     const radial = G.radialOf(FB, a);
     const base = G.pointOf(FB, canS, RB, a);
@@ -164,6 +166,7 @@ export function gasTurbine(C) {
     const idc = nameFor("comb.can-cap");
     const capFace = G.dot3(radial, V) > 0.12 ? Dots(G.dotsOf(CF2, 11, 7.6, 8, P, { all: true }), { size: 0.4, tone: "mid" }) + Ln(G.circleOf(CF2, 11, 4.2, P, 16), { tone: "faint" }) : "";
     put("comb", G.add3(top, G.mul3(radial, 10)), S(G.disc(9, 11, 9.8, CF2, P), { tone: "hi" }) + capFace, { name: idc, shapes: [record(A.disc(CF2, 9, 11, 9.8, { name: idc }))], bias: 0.3 });
+    C.cans.push({ a, radial, capTop: G.add3(top, G.mul3(radial, 11)) });
   }
   const portS = b1 - b0 - 12;
   C.ports = [];
@@ -212,14 +215,14 @@ export function gasTurbine(C) {
   const H = L.HRSG;
   const tbx0 = g.transition[0];
   const tbx1 = g.transition[1];
-  polyAt("diffuser", frustum(tbx0, [Y - 56, Y + 56, Z - 56, Z + 56], tbx1, [H.y0, H.y1, 5, 170]), { tone: "mid" }, {
+  polyAt("diffuser", frustum(tbx0, [Y - 56, Y + 56, 6.5, Z + 56], tbx1, [H.y0, H.y1, 6.5, 170]), { tone: "mid" }, {
     name: "diffuser.transition",
     extra:
       Ln([0.33, 0.66].map((t) => {
         const x = tbx0 + (tbx1 - tbx0) * t;
         const yy = Y + 56 + (H.y1 - (Y + 56)) * t;
         const zt = Z + 56 + (170 - (Z + 56)) * t;
-        const zb = Z - 56 + (5 - (Z - 56)) * t;
+        const zb = 6.5;
         return k.segment([x, yy, zb], [x, yy, zt], P);
       }).join(""), { tone: "faint" }),
   });

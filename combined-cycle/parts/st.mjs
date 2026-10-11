@@ -80,8 +80,8 @@ export function steamTurbine(C) {
   turned("steamgen", EXF, [[0, 0], [0, 15], [18, 15], [18, 0]], {}, { name: "steamgen.exciter", tone: "mid", inner: [4, 9, 14].map((s) => G.arcOf(EXF, s, 15, P)).join("") });
 
   // ---- shafts between the casings -----------------------------------------------------------------------------
-  turned("steam", frameAt(h1), [[0, 0], [0, 9], [l0 - h1 + 4, 9], [l0 - h1 + 4, 0]], { tone: "hi" }, { name: "steam.shaft1", bias: -0.5 });
-  turned("steam", frameAt(l1 - 4), [[0, 0], [0, 9], [g0 - l1 + 8, 9], [g0 - l1 + 8, 0]], { tone: "hi" }, { name: "steam.shaft2", bias: -0.5 });
+  turned("steam", frameAt(h1), [[0, 0], [0, 9], [l0 + 4 - h1, 9], [l0 + 4 - h1, 0]], { tone: "hi" }, { name: "steam.shaft1", bias: -0.5 });
+  turned("steam", frameAt(l1 - 4), [[0, 0], [0, 9], [g0 - (l1 - 4), 9], [g0 - (l1 - 4), 0]], { tone: "hi" }, { name: "steam.shaft2", bias: -0.5 });
   void G; void band; void padOn; void record; void V; void KS; void ballAt; void windowOn; void Dots;
 
   // ---- surface condenser under the low-pressure casing ------------------------------------------------------------------
@@ -92,12 +92,12 @@ export function steamTurbine(C) {
   const tubesWin = faceWindowX({ x: c.x + c.w, y0: c.y + 8, y1: c.y + c.d - 8, z0: c.z0 + 6, z1: c.z1 - 6, round: 2, content: Ln(bundle.join(""), { tone: "lo" }), name: "cond" });
   slabAt("condenser", CS, c.z0, c.z1 - c.z0, { tone: "mid" }, { name: "condenser.shell", bevel: 0.8, steps: 4, extra: tubesWin });
   // base pad, water boxes with their nozzle faces, and the ports the pipes land on
-  slabAt("condenser", { x: c.x - 6, y: c.y - 6, w: c.w + 12, d: c.d + 12, r: 2 }, 0, c.z0, { tone: "lo" }, { name: "condenser.pad", bevel: 0.6, steps: 3 });
+  slabAt("condenser", { x: c.x - 4, y: c.y - 6, w: c.w + 8, d: c.d + 12, r: 2 }, 0, c.z0, { tone: "lo" }, { name: "condenser.pad", bevel: 0.6, steps: 3 });
   const wbF = { x: c.x + 3, y: c.y + c.d, w: c.w - 6, d: 14, r: 7 };
   const wbB = { x: c.x + 3, y: c.y - 14, w: c.w - 6, d: 14, r: 7 };
   const wbExtra = (plan, face) => Ln(k.sideSeam(plan, c.z0 + 8, P, 4), { tone: "faint" }) + Ln(k.sideSeam(plan, c.z1 - 8, P, 4), { tone: "faint" }) + (face ? Dots([...Array(5)].flatMap((_, i) => [at([plan.x + 12 + (i * (plan.w - 24)) / 4, plan.y + plan.d, c.z0 + 4]), at([plan.x + 12 + (i * (plan.w - 24)) / 4, plan.y + plan.d, c.z1 - 4])]), { size: 0.45 }) : "");
   slabAt("condenser", wbF, c.z0 + 2, c.z1 - c.z0 - 4, { tone: "hi" }, { name: "condenser.waterbox", bevel: 0.8, steps: 6, extra: wbExtra(wbF, true) });
   slabAt("condenser", wbB, c.z0 + 2, c.z1 - c.z0 - 4, { tone: "hi" }, { name: "condenser.waterbox", bevel: 0.8, steps: 6, extra: wbExtra(wbB, false) });
   const faceY = wbF.y + wbF.d;
-  C.condenser = { hotwellOut: [c.x + c.w, c.y + c.d / 2, 10.4], inlet: [c.x + 20, faceY, c.z0 + 14], outlet: [c.x + c.w - 20, faceY, c.z1 - 14] };
+  C.condenser = { hotwellOut: [c.x + c.w, c.y + c.d / 2, L.PUMP_ZC[0]], inlet: [c.x + 20, faceY, c.z0 + 14], outlet: [c.x + c.w - 20, faceY, c.z1 - 14] };
 }

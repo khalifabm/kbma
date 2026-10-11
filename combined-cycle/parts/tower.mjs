@@ -64,19 +64,21 @@ export function coolingTower(C) {
     for (let i = 0; i < 4; i++) railPts.push(i);
     const posts2 = k.corners(deck, 1.6);
     for (const [x, y] of posts2) cylAt("tower", x, y, 0.55, DECK_Z + 3, 8, { tone: "mid", crease: "none" }, { name: "tower.post", steps: 8 });
-    put("tower", [deck.x + deck.w / 2, deck.y + deck.d / 2, DECK_Z + 11], Ln(k.planOutline(rail, DECK_Z + 11, P, 3), { tone: "mid" }), { name: nameFor("tower.rail"), bias: 0.3 });
+    const railId = nameFor("tower.rail");
+    const railRing = k.ringOf(rail, 3).map(([x, y]) => [x, y, DECK_Z + 11]);
+    put("tower", [deck.x + deck.w / 2, deck.y + deck.d / 2, DECK_Z + 11], Ln(k.planOutline(rail, DECK_Z + 11, P, 3), { tone: "mid" }), { name: railId, bias: 0.3, shapes: [record(A.tube([...railRing, railRing[0]], 0.3, { name: railId, limp: true }))] });
     C.cells.push({ cx, cy, z: DECK_Z + 3 + stackH, r: rr });
   }
 
   // hot-water distribution box on the first deck, and the circulating-water pump house in front of the basin
   const c0 = C.cells[0];
   const dist = { x: T.x + 5, y: c0.cy - 6, w: 12, d: 12, r: 1.5 };
-  slabAt("tower", dist, DECK_Z + 3, 7, { tone: "hi" }, { name: "tower.distribution", bevel: 0.5, steps: 2, extra: Dots(k.corners(dist, 2).map(([x, y]) => at([x, y, DECK_Z + 10])), { size: 0.4 }) });
-  const HOUSE = { x: T.x - 44, y: T.y + T.d - 44, w: 30, d: 26, r: 2 };
+  slabAt("tower", dist, DECK_Z + 3, 26, { tone: "hi" }, { name: "tower.distribution", bevel: 0.5, steps: 2, extra: Dots(k.corners(dist, 2).map(([x, y]) => at([x, y, DECK_Z + 29])), { size: 0.4 }) + Ln(k.sideSeam(dist, DECK_Z + 16, P, 2), { tone: "faint" }) });
+  const HOUSE = { x: T.x - 36, y: T.y + T.d - 44, w: 30, d: 26, r: 2 };
   slabAt("tower", HOUSE, 0, 16, { tone: "mid" }, { name: "tower.pumphouse", bevel: 0.7, steps: 3, extra: Ln(k.planOutline(k.insetPlan(HOUSE, 2.5), 16, P, 3), { tone: "faint" }) });
   [[HOUSE.x + 8, HOUSE.y + 8], [HOUSE.x + 21, HOUSE.y + 8], [HOUSE.x + 8, HOUSE.y + 19], [HOUSE.x + 21, HOUSE.y + 19]].slice(0, 2).forEach(([x, y]) => {
     const F = G.frameOf([x, y + 3, 16], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
-    turned("tower", F, [[0, 0], [0, 5.4], [1, 6, 1], [3, 6.2, 1], [14, 6.2, 1], [15, 6, 1], [17, 5.4], [17, 0]], {}, { name: "tower.motor", tone: "mid", smooth: true, extra: C.Faded(G.ribsOf(F, 3, 14, 6.2, 12, P, { fade: [0.1, 0.55] }), { tone: "lo" }) });
+    turned("tower", F, [[0, 0], [0, 5.4], [1, 6, 1], [3, 6.2, 1], [14, 6.2, 1], [15, 6, 1], [17, 5.4], [17, 0]], {}, { name: "tower.motor", tone: "mid", smooth: false, extra: C.Faded(G.ribsOf(F, 3, 14, 6.2, 12, P, { fade: [0.1, 0.55] }), { tone: "lo" }) });
   });
-  C.tower = { hotEnd: [dist.x + dist.w / 2, dist.y + dist.d / 2, DECK_Z + 10], coldStart: [HOUSE.x + HOUSE.w / 2, HOUSE.y + HOUSE.d, 8], house: HOUSE };
+  C.tower = { hotEnd: [dist.x + dist.w / 2, dist.y + dist.d / 2, 80], coldStart: [HOUSE.x + HOUSE.w / 2, HOUSE.y + HOUSE.d, 8], house: HOUSE };
 }

@@ -32,7 +32,25 @@ export function makeContext(P) {
     const id = nameFor(name ?? `${piece}.tube`);
     R.route(id, route, r, { owner: owner ?? id, touch, bundle, limp, gaps, closed, ends, rims, free, piece, move: NONE, ride: piece });
     const radius = typeof r === "function" ? r : r;
-    let travelled = 0;
+    // 2D arc length along the drawn route, so a dash train that is measured in drawing units stays continuous across chunk joints
+    const proj = route.map((p) => at(p));
+    const cum3 = [0];
+    const cum2 = [0];
+    for (let i = 1; i < route.length; i++) {
+      cum3.push(cum3[i - 1] + G.len3(G.sub3(route[i], route[i - 1])));
+      cum2.push(cum2[i - 1] + Math.hypot(proj[i][0] - proj[i - 1][0], proj[i][1] - proj[i - 1][1]));
+    }
+    const s2Of = (s3) => {
+      let lo = 0;
+      let hi = cum3.length - 1;
+      while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        if (cum3[mid] <= s3) lo = mid;
+        else hi = mid;
+      }
+      const span = cum3[hi] - cum3[lo] || 1;
+      return cum2[lo] + ((Math.max(0, Math.min(cum3[hi], s3)) - cum3[lo]) / span) * (cum2[hi] - cum2[lo]);
+    };
     tubePieces(route, radius, P, { maxLength, spacing, closed, breaks, gaps, caps, ...(rings ? { rings } : {}) }).forEach((part, index) => {
       let svg = tubeSvg(part, { tone });
       if (flow) {
@@ -40,7 +58,7 @@ export function makeContext(P) {
         const kind = typeof flow === "string" ? flow : flow.kind;
         const rev = typeof flow === "object" && flow.rev;
         const pts = part.points.map((p) => at(p));
-        const start = (part.ends && part.ends[0] ? part.from : part.from - 0.5) || 0;
+        const start = s2Of(Math.max(0, part.ends && part.ends[0] ? part.from : part.from - 0.5));
         svg += `<path class="fl" data-flow="${kind}"${rev ? " data-rev" : ""} style="--s:${start.toFixed(1)}px" d="${k.pathOf(pts)}"/>`;
       }
       put(piece, part.mid, svg, { bias, name: `${id}:${index}`, route: id, chunk: index, shapes: [A.tube(part.points, part.radii)], layer });
