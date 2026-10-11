@@ -21,7 +21,7 @@ const { W, H } = L;
 const P = k.fitProjection(
   [
     ...k.boxCorners(L.PLINTH, -L.PLINTH_H - L.FOOT_H, 0),
-    [L.STACK.x, L.STACK.y, L.STACK.z1 + 40],
+    [L.STACK.x, L.STACK.y, L.STACK.z1 + 106],
     [L.TOWER.x + L.TOWER.w, L.TOWER.y + L.TOWER.d, L.TOWER.h + 90],
   ],
   W,
@@ -37,6 +37,8 @@ back.push(`<path class="iso-halo" d="${k.haloOf(L.PLINTH, -L.PLINTH_H - L.FOOT_H
 back.push(S(k.slabOf(L.PLINTH, -L.PLINTH_H, L.PLINTH_H, P, 10, 1.8), { tone: "mid" }));
 C.record(A.slab(L.PLINTH, -L.PLINTH_H, L.PLINTH_H, { name: "stand.plinth" }, 10));
 back.push(Ln(k.planOutline(k.insetPlan(L.PLINTH, 8), 0, P), { tone: "lo" }));
+// painted zones on the plinth: the gas-turbine hall, the steam hall, the cooling yard
+for (const zone of [{ x: -392, y: -150, w: 520, d: 120, r: 6 }, { x: -64, y: 112, w: 296, d: 106, r: 6 }, { x: 288, y: 140, w: 180, d: 120, r: 6 }]) back.push(Ln(k.planOutline(zone, 0, P, 5), { tone: "faint" }));
 
 gasTurbine(C);
 hrsg(C);
@@ -45,6 +47,7 @@ coolingTower(C);
 site(C);
 piping(C);
 
+back.push(...(C.glows ?? []));
 const { items } = R;
 A.settle(R, P);
 items.sort((a, b) => a.key - b.key);

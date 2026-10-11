@@ -71,3 +71,6 @@
 .iso{--cc-puff:#cfd5de}
 .iso[data-theme="dark"]{--cc-puff:#9fb0d4}
 @media (max-width:640px){.cc .iso-plate{overflow:hidden}.cc-stage{width:130%;margin-left:-15%}}
+
+.cc-lamp-glow{fill:#ffd9a0;opacity:0;filter:blur(3px);pointer-events:none}
+.iso[data-theme="dark"] .cc-lamp-glow{opacity:.42}

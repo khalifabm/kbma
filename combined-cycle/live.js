@@ -302,7 +302,7 @@ vec4 plume(vec3 p0,vec3 V,vec3 base,float r0,float H,float spread,float amount,f
 void main(){
   vec2 vb=viewOf(gl_FragCoord.xy);
   vec3 V=towardViewer();vec3 p0=rayOf(vb);
-  vec4 s=plume(p0,V,uTop,13.,150.,.16,uStack,.032,3.1,1.);
+  vec4 s=plume(p0,V,uTop,13.,104.,.14,uStack,.034,3.1,1.);
   vec4 f0=plume(p0,V,uFan0.xyz,15.,170.,.22,uVapor,.062,7.7,0.);
   vec4 f1=plume(p0,V,uFan1.xyz,15.,170.,.22,uVapor,.062,11.3,0.);
   vec4 o=f1+f0*(1.-f1.a);o=o+s*(1.-o.a);

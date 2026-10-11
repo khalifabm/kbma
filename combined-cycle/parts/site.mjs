@@ -180,5 +180,18 @@ export function site(C) {
     slabAt("pumps", { x: px - 6, y: PS.y + 5 + cs, w: 12, d: 5, r: 0.8 }, 3, zc - rc - 3, { tone: "mid" }, { name: "pumps.leg", bevel: 0.2, steps: 2 });
     C.pumps.push({ x: px, zc, feed, suction: [px, PS.y + 5 + cs + 14, zc], suctionR: rc - 2.4, discharge: outlet });
   });
+
+  // ---- light poles round the site --------------------------------------------------------------------------------------------------
+  const pole = (x, y) => {
+    const F = G.frameOf([x, y, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
+    turned("site", F, [[0, 0], [0, 3.4], [2, 3.4], [2, 1.5], [6, 1.2], [72, 0.8], [72, 0]], {}, { name: "site.pole", tone: "mid", steps: 12 });
+    const arm = { x: x - 1, y: y - 0.7, w: 11, d: 1.4, r: 0.3 };
+    slabAt("site", arm, 72, 1.4, { tone: "mid" }, { name: "site.pole-arm", bevel: 0.2, steps: 2 });
+    const lamp = { x: x + 5, y: y - 2, w: 6, d: 4, r: 0.8 };
+    slabAt("site", lamp, 70.4, 1.6, { tone: "hi" }, { name: "site.lamp", bevel: 0.2, steps: 2, bias: 0.2 });
+    const lp = at([x + 8, y, 70]);
+    (C.glows = C.glows ?? []).push(`<circle class="cc-lamp-glow" cx="${lp[0].toFixed(1)}" cy="${(lp[1] + 3).toFixed(1)}" r="${(10 * C.KS).toFixed(1)}"/>`);
+  };
+  [[-424, 286], [-250, 286], [40, 286], [250, 286], [466, 230], [466, -60], [300, -226], [-424, -226], [-424, 120]].forEach(([x, y]) => pole(x, y));
   void faceWindowX; void faceWindowY; void polyAt; void spin; void record; void nameFor; void ballAt; void V; void KS; void put; void S;
 }

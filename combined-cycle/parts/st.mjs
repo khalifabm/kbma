@@ -35,7 +35,7 @@ export function steamTurbine(C) {
   const [h0, h1] = st.hp;
   const FH = frameAt(h0);
   const hp = [[0, 0], [0, 17], [2, 21], [9, 22], [h1 - h0 - 9, 22], [h1 - h0 - 2, 21], [h1 - h0, 17], [h1 - h0, 0]];
-  turned("steam", FH, hp, {}, { name: "steam.hp", tone: "mid", inner: [9, h1 - h0 - 9].map((s) => G.arcOf(FH, s, 22, P)).join("") });
+  const hpShape = turned("steam", FH, hp, {}, { name: "steam.hp", tone: "mid", inner: [9, h1 - h0 - 9].map((s) => G.arcOf(FH, s, 22, P)).join("") });
   slabAt("steam", { x: h0 + 8, y: Y - 12, w: 30, d: 24, r: 3 }, Z + 22, 14, { tone: "hi" }, { name: "steam.chest", bevel: 0.7, extra: Ln(k.planOutline(k.insetPlan({ x: h0 + 8, y: Y - 12, w: 30, d: 24, r: 3 }, 2.5), Z + 36, P, 3), { tone: "faint" }) });
   for (const x of [h0 + 12, h0 + 34]) cylAt("steam", x, Y, 3.4, Z + 36, 10, { tone: "mid" }, { name: "steam.valve", bevel: 0.4, steps: 16 });
 
@@ -61,9 +61,9 @@ export function steamTurbine(C) {
   });
   // exhaust neck down to the condenser
   slabAt("steam", { x: neckX[0] + 4, y: Y - 30, w: neckX[1] - neckX[0] - 8, d: 60, r: 3 }, L.CONDENSER.z1, LPZ0 - L.CONDENSER.z1, { tone: "mid" }, { name: "steam.neck", bevel: 0.6, steps: 3 });
-  // crossover from the high-pressure casing to the middle of the low-pressure casing
-  const cx = (l0 + l1) / 2;
-  void cx;
+  // crossover from the high-pressure casing's exhaust to the low-pressure casing's top
+  const xTop = C.padOn("steam", hpShape, [3.5, Y, Z + 22], [0, 0, 1], 4.0, 3, { name: "steam.crossover-pad" });
+  C.pipe("steam", [xTop, [3.5, Y, 156], [32, Y, 156], [32, Y, LPZ0 + 72]], 2.5, { name: "steam.crossover", tone: "hi", flow: "steam", bend: 4.4, maxLength: 20 });
 
   // ---- generator -----------------------------------------------------------------------------------------
   const [g0, g1] = st.gen;
