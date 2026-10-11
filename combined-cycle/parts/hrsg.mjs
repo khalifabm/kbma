@@ -65,7 +65,7 @@ export function hrsg(C) {
     name: "hrsg.roof",
     bevel: 1,
     extra:
-      Ln([...Array(5)].map((_, i) => k.lineOnTop([X0 + (i + 1) * 42, Y0], [X0 + (i + 1) * 42, Y1], ROOF + 6, P)).join(""), { tone: "faint" }) +
+      Ln([...Array(5)].map((_, i) => k.lineOnTop([X0 + (i + 1) * 42, ROOFP.y], [X0 + (i + 1) * 42, ROOFP.y + ROOFP.d], ROOF + 6, P)).join(""), { tone: "faint" }) +
       Dots(k.corners(ROOFP, 4).map(([x, y]) => at([x, y, ROOF + 6])), { size: 0.5 }),
   });
 

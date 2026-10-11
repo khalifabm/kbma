@@ -3,7 +3,7 @@
 export const AZIMUTH = 56;
 export const ELEVATION = 30;
 export const W = 1280;
-export const H = 940;
+export const H = 800;
 
 export const PLINTH = { x: -440, y: -236, w: 920, d: 530, r: 12 };
 export const PLINTH_H = 16;

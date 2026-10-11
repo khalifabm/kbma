@@ -18,16 +18,16 @@ export function piping(C) {
   loop("lp-riser", sl["ev-lp"], top("lp", 304), 232);
 
   // ---- main steam to the steam turbine (high pressure) and low-pressure steam to its casing -----------------------------------------
-  pipe("steam", [sl["sh-out"], [188, -42, 244], [188, 2, 244], [188, 2, 64], [188, 40, 64], [-17, 40, 64], [-17, 40, 170], [-17, 176, 170], [-17, 176, 136]], 3.4, { name: "steam.main", tone: "hi", flow: "steam", maxLength: 24, bend: 7.4, bands: [0.2, 0.55, 0.8] });
-  pipe("steam", [top("lp", 282), [282, -80, 250], [282, -10, 250], [282, -10, 80], [282, 30, 80], [57, 30, 80], [57, 30, 160], [57, 176, 160], [57, 176, 136]], 3.0, { name: "steam.low", tone: "hi", flow: "steam", maxLength: 24, bend: 4.4, bands: [0.25, 0.6] });
+  pipe("steam", [sl["sh-out"], [188, -42, 244], [188, 2, 244], [188, 2, 64], [188, 40, 64], [-17, 40, 64], [-17, 40, 170], [-17, 176, 170], [-17, 176, 136]], 3.4, { name: "steam.main", tone: "hi", flow: "steam", maxLength: 24, bend: 7.4, bands: [0.2, 0.8], touch: ["steam.rack*"], valves: [{ near: [100, 40, 64], kind: "box" }] });
+  pipe("steam", [top("lp", 282), [282, -80, 250], [282, -10, 250], [282, -10, 80], [282, 30, 80], [57, 30, 80], [57, 30, 160], [57, 176, 160], [57, 176, 136]], 3.0, { name: "steam.low", tone: "hi", flow: "steam", maxLength: 24, bend: 4.4, bands: [0.25], touch: ["steam.rack*"], valves: [{ near: [190, 30, 80], kind: "wheel" }] });
 
   // ---- condensate and feed water: condenser to pumps, pumps to the cold ends of the boiler -------------------------------------------
   const [cp, fp] = C.pumps;
   const cd = C.condenser;
   const WALL = L.HRSG.y0 + 3; // the header ends on the inner face of the back wall
   pipe("pumps", [cd.hotwellOut, [cp.x, cd.hotwellOut[1], cd.hotwellOut[2]], cp.suction.slice(0, 3).map((v, i) => (i === 0 ? cp.x : v))], 2.8, { name: "pumps.suction", tone: "mid", flow: "water", maxLength: 24 });
-  pipe("pumps", [cp.discharge, [cp.x, cp.discharge[1], 40], [cp.x, -12, 40], [345, -12, 40], [345, -12, 10.4], [345, WALL, 10.4]], 2.4, { name: "pumps.condensate", tone: "mid", flow: "water", maxLength: 24, bend: 3.4, flanges: [true, false] });
-  pipe("pumps", [fp.discharge, [fp.x, fp.discharge[1], 50], [fp.x, 10, 50], [261, 10, 50], [261, 10, 10.4], [261, WALL, 10.4]], 2.4, { name: "pumps.feed", tone: "mid", flow: "water", maxLength: 24, bend: 3.4, flanges: [true, false] });
+  pipe("pumps", [cp.discharge, [cp.x, cp.discharge[1], 40], [cp.x, -12, 40], [345, -12, 40], [345, -12, 10.4], [345, WALL, 10.4]], 2.4, { name: "pumps.condensate", tone: "mid", flow: "water", maxLength: 24, bend: 3.4, flanges: [true, false], touch: ["pumps.rack*"], valves: [{ near: [cp.x, 60, 40], kind: "wheel" }] });
+  pipe("pumps", [fp.discharge, [fp.x, fp.discharge[1], 50], [fp.x, 10, 50], [261, 10, 50], [261, 10, 10.4], [261, WALL, 10.4]], 2.4, { name: "pumps.feed", tone: "mid", flow: "water", maxLength: 24, bend: 3.4, flanges: [true, false], valves: [{ near: [fp.x, 66, 50], kind: "box" }] });
 
   // ---- fuel gas to the combustor: a manifold carried on the can covers, a ball tee over each, and a feed from the skid -----------------
   const FB = G.frameOf([L.GT.comb[0], L.GT_Y, L.GT_Z], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
@@ -61,11 +61,19 @@ export function piping(C) {
   }
   const feedTee = G.pointOf(FB, RING_S, RING_R, 0);
   const fuelRim = Math.sqrt(TEE_R ** 2 - 2.8 ** 2);
-  pipe("fuel", [[-170, 24, 17], [-170, 24, L.GT_Z], [feedTee[0], 24, L.GT_Z], [feedTee[0], feedTee[1] + fuelRim, L.GT_Z]], 2.8, { name: "fuel.feed", tone: "mid", flow: "fuel", maxLength: 24, bend: 3.4, flanges: [true, false], touch: ["fuel.ring*", "fuel.tee*"] });
+  pipe("fuel", [[-170, 24, 17], [-170, 24, L.GT_Z], [feedTee[0], 24, L.GT_Z], [feedTee[0], feedTee[1] + fuelRim, L.GT_Z]], 2.8, { name: "fuel.feed", tone: "mid", flow: "fuel", maxLength: 24, bend: 3.4, flanges: [true, false], touch: ["fuel.ring*", "fuel.tee*", "fuel.rack*"], valves: [{ near: [-140, 24, L.GT_Z], kind: "box" }] });
 
   // ---- cooling water between the condenser and the tower ---------------------------------------------------------------------------------------
   const tw = C.tower;
-  pipe("tower", [tw.coldStart, [tw.coldStart[0], 250, tw.coldStart[2]], [cd.inlet[0] - 2, 250, tw.coldStart[2]], [cd.inlet[0] - 2, 250, cd.inlet[2]], [cd.inlet[0] - 2, cd.inlet[1], cd.inlet[2]]], 5, { name: "tower.cold", tone: "hi", flow: "cool", maxLength: 30, bend: 2.6 });
+  pipe("tower", [tw.coldStart, [tw.coldStart[0], 250, tw.coldStart[2]], [cd.inlet[0] - 2, 250, tw.coldStart[2]], [cd.inlet[0] - 2, 250, cd.inlet[2]], [cd.inlet[0] - 2, cd.inlet[1], cd.inlet[2]]], 5, { name: "tower.cold", tone: "hi", flow: "cool", maxLength: 30, bend: 2.6, touch: ["tower.sleeper*"], valves: [{ near: [150, 250, tw.coldStart[2]], kind: "box" }] });
   const hot = tw.hotEnd;
-  pipe("tower", [cd.outlet, [cd.outlet[0], 252, cd.outlet[2]], [cd.outlet[0] + 20, 272, cd.outlet[2]], [hot[0], 272, cd.outlet[2]], [hot[0], 272, 66], [hot[0], 258, 80], [hot[0], hot[1] + 6, 80]], 5, { name: "tower.hot", tone: "hi", flow: "cool", maxLength: 30, bend: 4.4, flangeR: [1.55, 0.95] });
+  pipe("tower", [cd.outlet, [cd.outlet[0], 252, cd.outlet[2]], [cd.outlet[0] + 20, 272, cd.outlet[2]], [hot[0], 272, cd.outlet[2]], [hot[0], 272, 66], [hot[0], 258, 80], [hot[0], hot[1] + 6, 80]], 5, { name: "tower.hot", tone: "hi", flow: "cool", maxLength: 30, bend: 4.4, flangeR: [1.55, 0.95], touch: ["tower.rack*"], valves: [{ near: [200, 272, cd.outlet[2]], kind: "box" }] });
+
+  // ---- pipe supports: rack posts under the long runs ------------------------------------------------------------------------------------------
+  for (const x of [160, 40]) C.supportAt("steam", [x, 40, 64], 3.4, { axis: "x", name: "steam.rack" });
+  for (const x of [250, 112]) C.supportAt("steam", [x, 30, 80], 3.0, { axis: "x", name: "steam.rack" });
+  for (const x of [200, 100, 20]) C.supportAt("tower", [x, 250, tw.coldStart[2]], 5, { axis: "x", name: "tower.sleeper", wide: 14 });
+  for (const x of [160, 240]) C.supportAt("tower", [x, 272, cd.outlet[2]], 5, { axis: "x", name: "tower.rack", wide: 14 });
+  for (const y of [30, 8]) C.supportAt("pumps", [cp.x, y, 40], 2.4, { axis: "y", name: "pumps.rack", wide: 8 });
+  for (const x of [-150, -110]) C.supportAt("fuel", [x, 24, L.GT_Z], 2.8, { axis: "x", name: "fuel.rack", wide: 8 });
 }

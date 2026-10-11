@@ -34,19 +34,35 @@ function step(dt, calm) {
   const on = S.run;
   let moving = false;
   const go = (name, target, seconds) => { if (settle(env[name], target, dt, seconds, calm)) moving = true; };
-  go("gtSpeed", on ? 1 : 0, on ? 5 : 7);
-  go("flame", on && env.gtSpeed.x > 0.3 ? 1 : 0, on ? 1.2 : 0.6);
-  go("gtLoad", on && env.gtSpeed.x > 0.96 && env.flame.x > 0.9 ? 1 : 0, on ? 5 : 2.5);
-  go("boiler", env.gtLoad.x, on ? 9 : 14);
-  go("steam", env.boiler.x > 0.45 ? clamp((env.boiler.x - 0.45) / 0.45, 0, 1) : 0, 6);
-  go("stSpeed", on && env.steam.x > 0.55 ? 1 : 0, on ? 6 : 9);
-  go("stLoad", on && env.stSpeed.x > 0.96 ? 1 : 0, on ? 5 : 2.5);
-  go("cool", env.stLoad.x, 4);
+  go("gtSpeed", on ? 1 : 0, on ? 1.3 : 2.2);
+  go("flame", on && env.gtSpeed.x > 0.3 ? 1 : 0, on ? 0.45 : 0.3);
+  go("gtLoad", on && env.gtSpeed.x > 0.9 && env.flame.x > 0.9 ? 1 : 0, on ? 1.2 : 1.0);
+  go("boiler", env.gtLoad.x, on ? 2.4 : 4);
+  go("steam", env.boiler.x > 0.45 ? clamp((env.boiler.x - 0.45) / 0.45, 0, 1) : 0, 1.8);
+  go("stSpeed", on && env.steam.x > 0.55 ? 1 : 0, on ? 1.6 : 2.6);
+  go("stLoad", on && env.stSpeed.x > 0.9 ? 1 : 0, on ? 1.3 : 1.0);
+  go("cool", env.stLoad.x, 1.4);
   return moving;
 }
 const levels = () => ({ gt: env.gtLoad.x, boiler: env.boiler.x * (env.steam.x > 0.05 ? 1 : 0.92), st: env.stLoad.x, gtSpeed: env.gtSpeed.x, stSpeed: env.stSpeed.x });
 const model = () => M.plant({ load: S.load, levels: levels() });
 
+const levels5 = {};
+function setLevel(name, value) {
+  const level = Math.round(clamp(value, 0, 1) * 5);
+  if (levels5[name] !== level) { levels5[name] = level; stage.setAttribute(`data-fl-${name}`, String(level)); }
+}
+const portGlows = [...stage.querySelectorAll(".cc-port-glow")];
+const puffGroup = stage.querySelector(".cc-puffs");
+const bankEls = [];
+for (const el of front.querySelectorAll(".it[data-bank]")) (bankEls[Number(el.dataset.bank)] ??= []).push(el);
+const bankLevel = [];
+function setBank(b, value) {
+  const q = Math.round(clamp(value, 0, 1) * 32) / 32;
+  if (bankLevel[b] === q) return;
+  bankLevel[b] = q;
+  for (const el of bankEls[b] ?? []) el.style.setProperty("--bk", q.toFixed(3));
+}
 const SPEED = 1.7; // radians per second at full speed, slowed so the blades can be followed
 function spinAll() {
   for (const s of spinEls) {
@@ -87,6 +103,7 @@ const phaseWord = () => {
   return "";
 };
 let lastText = "";
+let lastPhase = "cold";
 function say() {
   const m = model();
   let text;
@@ -96,10 +113,12 @@ function say() {
     text = word ? word : `${M.fmt(m.total.mw)} MW · ${M.fmt(m.total.efficiency * 100, 1)} % · gas ${M.fmt(m.gt.mw)} + steam ${M.fmt(m.st.mw)}`;
   }
   if (text !== lastText) { readout.textContent = text; lastText = text; }
+  const phase = phaseWord() || "full load";
+  if (phase !== lastPhase) { lastPhase = phase; if (!selected) liveRegion.textContent = phase; }
 }
 
 // ---- the loop --------------------------------------------------------------------------------------------------
-let frame = 0, last = 0, clock = 0, visible = false;
+let frame = 0, last = 0, clock = 0, visible = false, slow = 0.016, count = 0;
 function tick(now) {
   const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
   last = now;
@@ -109,22 +128,23 @@ function tick(now) {
   if (!calm) {
     S.angle += SPEED * env.gtSpeed.x * dt;
     S.stAngle += SPEED * env.stSpeed.x * dt;
-    S.phase += dt * 22 * (0.35 + 0.65 * S.load);
     spinAll();
   }
-  stage.style.setProperty("--ph", S.phase.toFixed(2));
-  stage.style.setProperty("--fl-air", (env.gtSpeed.x * 0.9).toFixed(3));
-  stage.style.setProperty("--fl-fuel", env.flame.x.toFixed(3));
-  stage.style.setProperty("--fl-water", clamp(env.boiler.x * 1.2, 0, 1).toFixed(3));
-  stage.style.setProperty("--fl-steam", env.steam.x.toFixed(3));
-  stage.style.setProperty("--fl-cool", env.cool.x.toFixed(3));
-  stage.style.setProperty("--cc-flame", env.flame.x.toFixed(3));
+  setLevel("air", env.gtSpeed.x * 0.9);
+  setLevel("fuel", env.flame.x);
+  setLevel("water", clamp(env.boiler.x * 1.2, 0, 1));
+  setLevel("steam", env.steam.x);
+  setLevel("cool", env.cool.x);
+  if (env.gtSpeed.x > 0.02 !== stage.hasAttribute("data-run")) stage.toggleAttribute("data-run", env.gtSpeed.x > 0.02);
+  for (const el of portGlows) el.style.setProperty("--cc-flame", env.flame.x.toFixed(3));
   if (touring && env.stLoad.x > 0.95 && !selected && !calm) { tourAt = 0; }
   if (touring) runTour(dt);
-  drawGL(clock);
+  slow = slow * 0.96 + dt * 0.04;
+  count++;
+  if (calm || slow < 0.026 || count % 2 === 0) drawGL(clock);
   say();
   const alive = moving || S.run || env.gtSpeed.x > 0.001 || env.stSpeed.x > 0.001;
-  frame = visible && (alive || touring) ? requestAnimationFrame(tick) : 0;
+  frame = visible && (alive || touring) && !(calm && !moving) ? requestAnimationFrame(tick) : 0;
 }
 const kick = () => { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } };
 
@@ -186,8 +206,8 @@ stage.addEventListener("keydown", (event) => {
 });
 
 new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; if (visible) kick(); }, { rootMargin: "120px 0px" }).observe(stage);
-if (still.matches) { touring = false; setRun(true); spinAll(); }
 runButton.setAttribute("data-state", "off");
+if (still.matches) { touring = false; setRun(true); spinAll(); }
 say();
 
 // ---- shaders inside the drawing: heat haze through the boiler (between the two SVGs) and the plumes (over them) ----------------
@@ -235,7 +255,7 @@ void main(){
     float n=noise3(vec3(p.x*.05-uTime*1.1,p.y*.06,p.z*.06));
     float dens=(.30+.70*jet)*(.55+.9*n);
     dens*=window(p.x,LO.x,HI.x,6.)*window(p.y,LO.y,HI.y,7.)*window(p.z,LO.z,HI.z,6.);
-    float sigma=(.006+.022*h)*uHeat;
+    float sigma=(.010+.040*h)*uHeat;
     float a=1.-exp(-dens*sigma*dt);
     vec3 c=heatCol(T);
     acc+=trans*a*c;
@@ -271,7 +291,7 @@ vec4 plume(vec3 p0,vec3 V,vec3 base,float r0,float H,float spread,float amount,f
     float d=core*(.25+1.05*smoothstep(.2,.8,n))*smoothstep(0.,7.,h)*(1.-smoothstep(H*.5,H,h))*amount;
     float a=1.-exp(-d*dt*k);
     float up=clamp(h/H*.7+n*.5,0.,1.);
-    vec3 dark=mix(vec3(.66,.71,.80),vec3(.97,.98,1.),up);
+    vec3 dark=mix(vec3(.70,.73,.79),vec3(.97,.97,.985),up);
     vec3 night=mix(vec3(.55,.62,.80),vec3(.9,.94,1.),up)*.85;
     vec3 sc=mix(night,dark,uLight);
     sc=mix(sc,vec3(1.,.82,.58),warm*(1.-smoothstep(0.,H*.3,h))*.5);
@@ -282,9 +302,9 @@ vec4 plume(vec3 p0,vec3 V,vec3 base,float r0,float H,float spread,float amount,f
 void main(){
   vec2 vb=viewOf(gl_FragCoord.xy);
   vec3 V=towardViewer();vec3 p0=rayOf(vb);
-  vec4 s=plume(p0,V,uTop,13.,150.,.16,uStack,.020,3.1,1.);
-  vec4 f0=plume(p0,V,uFan0.xyz,15.,170.,.22,uVapor,.040,7.7,0.);
-  vec4 f1=plume(p0,V,uFan1.xyz,15.,170.,.22,uVapor,.040,11.3,0.);
+  vec4 s=plume(p0,V,uTop,13.,150.,.16,uStack,.032,3.1,1.);
+  vec4 f0=plume(p0,V,uFan0.xyz,15.,170.,.22,uVapor,.062,7.7,0.);
+  vec4 f1=plume(p0,V,uFan1.xyz,15.,170.,.22,uVapor,.062,11.3,0.);
   vec4 o=f1+f0*(1.-f1.a);o=o+s*(1.-o.a);
   float a=clamp(o.a,0.,.9)*(mix(.8,1.,uLight));
   vec3 col=min(o.rgb*(mix(.8,1.,uLight)),vec3(a));
@@ -297,6 +317,10 @@ if (gasLayer && veilLayer) stage.setAttribute("data-gl", "");
 const BANK_COUNT = D.banks.length;
 function drawGL(clockTime) {
   const heat = env.boiler.x;
+  if (puffGroup && !stage.hasAttribute("data-gl")) {
+    puffGroup.style.setProperty("--cc-stack", (env.gtLoad.x * (0.45 + 0.4 * S.load)).toFixed(3));
+    puffGroup.style.setProperty("--cc-vapor", (env.cool.x * (0.5 + 0.5 * S.load)).toFixed(3));
+  }
   const m = model();
   const temps = [m.gt.exhaust, ...m.boiler.gasTemps, m.boiler.stack];
   // station temperatures: inlet, then after each bank; the haze reads them at its own x
@@ -314,10 +338,7 @@ function drawGL(clockTime) {
     else veilLayer.clear();
   }
   // the banks warm up with the gas that passes through them
-  for (let b = 0; b < BANK_COUNT; b++) {
-    const t = m.boiler.gasTemps[b];
-    stage.style.setProperty(`--bk-${b}`, (clamp((t - 70) / 520, 0, 1) * heat).toFixed(3));
-  }
+  for (let b = 0; b < BANK_COUNT; b++) setBank(b, clamp((m.boiler.gasTemps[b] - 70) / 520, 0, 1) * heat);
 }
 
 // ---- test hook: ?pose=full starts the plant at full load with the tour off, so stills show the steady state ----------------------------------

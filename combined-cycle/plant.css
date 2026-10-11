@@ -27,14 +27,18 @@
 .it[data-on] .iso-shade,.it[data-on] .tb-body{fill:var(--anatomy-lit-shade)}
 .it[data-on] [data-seamless]>.iso-shade{stroke:var(--anatomy-lit-shade)}
 .it[data-on] [data-seamless]>.iso-top{stroke:var(--anatomy-lit-top)}
-/* ---- flow dashes: one train per medium, opacity written by the page ---- */
-.fl{vector-effect:none;stroke-width:1.5;stroke-dasharray:1.6 7;stroke-dashoffset:calc(var(--s,0px) - var(--ph,0) * 1px);opacity:var(--fl,0)}
-.fl[data-rev]{stroke-dashoffset:calc(var(--s,0px) + var(--ph,0) * 1px)}
-.fl[data-flow="steam"]{stroke:var(--cc-steam);opacity:var(--fl-steam,0)}
-.fl[data-flow="water"]{stroke:var(--cc-water);opacity:var(--fl-water,0)}
-.fl[data-flow="fuel"]{stroke:var(--cc-fuel);opacity:var(--fl-fuel,0)}
-.fl[data-flow="cool"]{stroke:var(--cc-water);opacity:var(--fl-cool,0)}
-.fl[data-flow="air"]{stroke:var(--cc-air);opacity:var(--fl-air,0)}
+/* ---- flow dashes: a dash train per medium. The pattern repeats every 8.6 units, so one looping animation keeps every chunk of a pipe in step; opacity comes from a level attribute on the stage ---- */
+.fl{vector-effect:none;stroke-width:1.5;stroke-dasharray:1.6 7;stroke-dashoffset:var(--s,0px);opacity:0;transition:opacity .6s linear;animation:cc-flow .55s linear infinite;animation-play-state:paused}
+.fl[data-rev]{animation-name:cc-flow-rev}
+.cc-stage[data-run] .fl{animation-play-state:running}
+@keyframes cc-flow{from{stroke-dashoffset:var(--s,0px)}to{stroke-dashoffset:calc(var(--s,0px) - 8.6px)}}
+@keyframes cc-flow-rev{from{stroke-dashoffset:var(--s,0px)}to{stroke-dashoffset:calc(var(--s,0px) + 8.6px)}}
+@media (prefers-reduced-motion:reduce){.fl{animation:none}}
+.fl[data-flow="steam"]{stroke:var(--cc-steam)}
+.fl[data-flow="water"]{stroke:var(--cc-water)}
+.fl[data-flow="fuel"]{stroke:var(--cc-fuel)}
+.fl[data-flow="cool"]{stroke:var(--cc-water)}
+.fl[data-flow="air"]{stroke:var(--cc-air)}
 .iso{--cc-steam:#c2410c;--cc-water:#2f6fdc;--cc-fuel:#8a5a00;--cc-air:#2f6fdc}
 .iso[data-theme="dark"]{--cc-steam:#ff9a5a;--cc-water:#6ea8ff;--cc-fuel:#ffcf6a;--cc-air:#9ac4ff}
 .cc-port-glow{opacity:var(--cc-flame,0)}
@@ -59,3 +63,11 @@
 .iso[data-theme="dark"]{--cc-hot:#ff8a3c}
 .cc-stage>canvas.cc-gl{position:absolute;inset:0;width:100%;height:100%!important;pointer-events:none}
 .iso[data-theme="dark"] .cc-gl{mix-blend-mode:screen}
+
+.cc-puff{fill:var(--cc-puff);pointer-events:none}
+.cc-puff-stack{opacity:calc(var(--cc-stack,0) * .5 / (1 + var(--i) * .5))}
+.cc-puff-vapor{opacity:calc(var(--cc-vapor,0) * .85 / (1 + var(--i) * .45))}
+.cc-stage[data-gl] .cc-puffs{display:none}
+.iso{--cc-puff:#cfd5de}
+.iso[data-theme="dark"]{--cc-puff:#9fb0d4}
+@media (max-width:640px){.cc .iso-plate{overflow:hidden}.cc-stage{width:130%;margin-left:-15%}}

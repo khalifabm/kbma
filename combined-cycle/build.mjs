@@ -55,7 +55,10 @@ const frontItems = items.map((item, index) => (item.layer === "back" ? "" : gOf(
 const LABEL =
   "A combined cycle power plant seen from above and in front. At the back a gas turbine train: air filter house and inlet plenum, a compressor and a combustor ringed with can covers, a turbine, and a generator. Its exhaust runs through the boiler, an open-fronted duct of tube banks with two steam drums on its roof and a tall stack. In front, a steam turbine with its generator stands on a table-top pedestal over the condenser; a cooling tower, a control room and transformers complete the site.";
 const backSvg = k.figureSvg({ width: W, height: H, label: LABEL, body: [...back, `<g class="plant-back">${backItems}</g>`], className: "cc-back" });
-const frontSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg cc-front" viewBox="0 0 ${W} ${H}" aria-hidden="true"><g class="plant">${frontItems}</g></svg>`;
+// the plumes drawn as a few soft puffs, for browsers without WebGL; hidden once the shaders run
+const puffs = (base, n, dx, dy, r0, grow, cls) => [...Array(n)].map((_, i) => { const p = at([base[0] + dx * i * 5, base[1] + dy * i * 5, base[2] + i * 24]); return `<circle class="cc-puff ${cls}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${((r0 + grow * i) * C.KS).toFixed(1)}" style="--i:${i}"/>`; }).join("");
+const puffSvg = `<g class="cc-puffs">${puffs([L.STACK.x, L.STACK.y, L.STACK.z1], 5, 0.55, -0.35, 12, 4, "cc-puff-stack")}${(C.cells ?? []).map((c) => puffs([c.cx, c.cy, c.z], 5, 0.55, -0.35, 14, 5, "cc-puff-vapor")).join("")}</g>`;
+const frontSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg cc-front" viewBox="0 0 ${W} ${H}" aria-hidden="true"><g class="plant">${frontItems}</g>${puffSvg}</svg>`;
 
 const DATA = {
   W,
@@ -94,8 +97,9 @@ const latheScript = (() => {
 })();
 const spinScript = strip("spin.mjs").replace(/^export /gm, "");
 const LIVE = readFileSync(join(HERE, "live.js"), "utf8").replace("__DATA__", JSON.stringify(DATA));
-const bankCss = L.BANKS.map((_, b) => `.it[data-bank="${b}"] .iso-fill{fill:color-mix(in srgb,var(--cc-hot) calc(var(--bk-${b},0) * 42%),var(--anatomy-paper))}.it[data-bank="${b}"] .iso-top{fill:color-mix(in srgb,var(--cc-hot) calc(var(--bk-${b},0) * 46%),var(--anatomy-top))}` + [0, 1, 2, 3].map((n) => `.it[data-bank="${b}"] .iso-shade[data-shade="${n}"]{fill:color-mix(in srgb,var(--cc-hot) calc(var(--bk-${b},0) * 50%),var(--anatomy-shade-${n}))}`).join("")).join("");
-const CSS = readFileSync(join(HERE, "plant.css"), "utf8") + bankCss;
+const bankCss = `.it[data-bank] .iso-fill{fill:color-mix(in srgb,var(--cc-hot) calc(var(--bk,0) * 42%),var(--anatomy-paper))}.it[data-bank] .iso-top{fill:color-mix(in srgb,var(--cc-hot) calc(var(--bk,0) * 46%),var(--anatomy-top))}` + [0, 1, 2, 3].map((n) => `.it[data-bank] .iso-shade[data-shade="${n}"]{fill:color-mix(in srgb,var(--cc-hot) calc(var(--bk,0) * 50%),var(--anatomy-shade-${n}))}`).join("");
+const flowCss = ["steam", "water", "fuel", "cool", "air"].map((m) => [1, 2, 3, 4, 5].map((l) => `.cc-stage[data-fl-${m}="${l}"] .fl[data-flow="${m}"]{opacity:${(l / 5).toFixed(2)}}`).join("")).join("");
+const CSS = readFileSync(join(HERE, "plant.css"), "utf8") + bankCss + flowCss;
 const page = k.pageHtml({ title: "Combined cycle plant", theme: THEME, body: `<style>${CSS}</style>${body}`, script: kitScript() + glScript() + latheScript + spinScript + wrapModule("MODEL", "model.mjs") + LIVE, width: 1280 });
 const name = THEME === "light" ? "combined-cycle-light.html" : "combined-cycle.html";
 writeFileSync(join(HERE, name), page);

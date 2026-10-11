@@ -140,7 +140,7 @@ export function site(C) {
   [0, 1].forEach((i) => {
     const bx = CR.x + 14 + i * 40;
     const bp = { x: bx, y: CR.y + 14, w: 28, d: 22, r: 1.5 };
-    slabAt("site", bp, 39, 9, { tone: "mid" }, { name: "site.chiller", bevel: 0.5, steps: 2, extra: Ln([...Array(6)].map((_, j) => k.lineOnTop([bp.x + 3, bp.y + 3 + j * 3.2], [bp.x + bp.w - 3, bp.y + 3 + j * 3.2], 48, P)).join(""), { tone: "lo" }) });
+    slabAt("site", bp, 39, 9, { tone: "mid" }, { name: "site.chiller", bevel: 0.5, steps: 2, extra: Ln([...Array(5)].map((_, j) => k.planOutline({ x: bp.x + 3, y: bp.y + 3 + j * 3.6, w: bp.w - 6, d: 1, r: 0.5 }, 48, P, 3)).join(""), { tone: "lo" }) });
   });
   const mast = G.frameOf([CR.x + CR.w - 16, CR.y + CR.d - 14, 39], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
   turned("site", mast, [[0, 0], [0, 1.2], [20, 1.2], [20, 0]], {}, { name: "site.mast", tone: "mid", steps: 10, owner: "site.antenna" });
@@ -170,7 +170,7 @@ export function site(C) {
     const rm = feed ? 8.2 : 7.2;
     const len0 = feed ? 23 : 20;
     const MF = G.frameOf([px, PS.y + 5, zc], [0, 1, 0], [1, 0, 0], [0, 0, 1]);
-    turned("pumps", MF, [[0, 0], [0, rm - 1.2], [1.5, rm - 0.2, 1], [3, rm, 1], [len0 - 3, rm, 1], [len0 - 1.5, rm - 0.2, 1], [len0, rm - 1.2], [len0, 0]], {}, { name: "pumps.motor", tone: "mid", smooth: false, extra: C.Faded(G.ribsOf(MF, 3, len0 - 3, rm, 14, P, { fade: [0.1, 0.55] }), { tone: "lo" }) });
+    turned("pumps", MF, [[0, 0], [0, rm - 1.2], [1.5, rm - 0.2, 1], [3, rm, 1], [len0 - 3, rm, 1], [len0 - 1.5, rm - 0.2, 1], [len0, rm - 1.2], [len0, 0]], {}, { name: "pumps.motor", tone: "mid", smooth: false, extra: C.Faded(G.ribsOf(MF, 3, len0 - 3, rm, 14, P, { fade: [0.1, 0.55], seams: true }), { tone: "lo" }) });
     turned("pumps", MF, [[len0, 0], [len0, 3], [len0 + 7, 3], [len0 + 7, 0]], {}, { name: "pumps.coupling", tone: "lo", steps: 14, bias: 0.1 });
     const cs = len0 + 7;
     const rc = feed ? 9.6 : 9;

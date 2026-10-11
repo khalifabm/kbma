@@ -90,7 +90,7 @@ export function makeContext(P) {
     put(piece, centre, S(paths, { tone }) + faces.join(""), { bias, name: id, shapes: [record(A.disc(F, -thick / 2, thick / 2, r, { name: id, owner }))], layer });
   }
 
-  function pipe(piece, control, r, { bend = 2.6, tone = "hi", flanges = [true, true], flangeR = 1.55, coupling = false, bands = [], bellows = null, valve = null, bias = 0, maxLength = 26, spacing, name, touch, breaks = [], gaps: extra = [], free, flow, layer, limp = false } = {}) {
+  function pipe(piece, control, r, { bend = 2.6, tone = "hi", flanges = [true, true], flangeR = 1.55, coupling = false, bands = [], bellows = null, valve = null, valves = [], bias = 0, maxLength = 26, spacing, name, touch, breaks = [], gaps: extra = [], free, flow, layer, limp = false } = {}) {
     const flangeRs = [flangeR].flat().length > 1 ? [flangeR].flat() : [flangeR, flangeR].flat();
     if (coupling) flanges = [flanges[0], false];
     const line = G.fillet(control, Math.max(r * bend, 3), r > 3 ? 24 : 12, { P, tube: r });
@@ -117,10 +117,13 @@ export function makeContext(P) {
       const along = valve[0] > 1 ? valve[0] : total * valve[0];
       gaps.push([along - valve[1] * 2.4, along + valve[1] * 2.4]);
     }
+    const valveAlongs = valves.map((spec) => alongNear(line, spec.near));
+    valveAlongs.forEach((along) => gaps.push([along - r * 2.4, along + r * 2.4]));
     const owner = tubeItems(piece, line, r, { name: name ?? `${piece}.pipe`, tone, bias, maxLength, spacing: spacing ?? Math.max(0.8, Math.min(2.4, r * 0.18)), touch, gaps, breaks, free, flow, layer, limp, rims: flanges.map((flanged, index) => (flanged ? r * flangeRs[index] : index && coupling ? r * 1.5 : r)) });
     for (const { kind, centre, tangent, radius, thick } of collars)
       flangeAt(piece, centre, tangent, radius, thick, { bolts: kind === "flange" && r > 3 ? 8 : 0, tone: kind === "flange" || kind === "coupling" ? tone : "mid", bias, name: `${owner}.${kind}`, owner, layer });
     line.owner = owner;
+    valves.forEach((spec, i) => valveAt(piece, line, valveAlongs[i], r, spec));
     return line;
   }
 
@@ -259,5 +262,69 @@ export function makeContext(P) {
     }
   }
 
-  return { railing, faceWindowX, faceWindowY, polyAt, spins, spin, windowOn, padOn, k, G, A, P, R, V, KS, at, S, Ln, Dots, Faded, record, put, tubeItems, turned, band, flangeAt, pipe, slabAt, cylAt, ballAt, nameFor, NONE };
+  // arc length on a route nearest to a world point
+  function alongNear(line, target) {
+    const dense = G.resample(line, 0.5);
+    let best = 0;
+    let bestD = Infinity;
+    let acc = 0;
+    dense.forEach((p, i) => {
+      if (i) acc += G.len3(G.sub3(p, dense[i - 1]));
+      const d = G.len3(G.sub3(p, target));
+      if (d < bestD) { bestD = d; best = acc; }
+    });
+    return best;
+  }
+
+  // a valve on a straight horizontal run: bulged body, a neck going up, and a hand wheel or an actuator box on top
+  function valveAt(piece, line, along, r, { kind = "wheel", tone = "hi", name } = {}) {
+    const centre = G.pointAlong(line, along);
+    const tangent = G.tangentAlong(line, along);
+    const F = G.frameAlong(centre, tangent);
+    const owner = line.owner;
+    const id = nameFor(name ?? `${owner}.valve`);
+    const half = r * 2.4;
+    const crown = r * 1.9;
+    const bulge = (x) => r * 1.4 + (crown - r * 1.4) * Math.sqrt(Math.max(0, 1 - (x / (r * 1.5)) ** 2));
+    const bulgeSlope = (x) => {
+      if (Math.abs(x) >= r * 1.5 - 1e-9) return 0;
+      const t = Math.max(-0.995, Math.min(0.995, x / (r * 1.5)));
+      return (-(crown - r * 1.4) * t) / (r * 1.5 * Math.sqrt(1 - t * t));
+    };
+    const meridian = [[-half, 0], [-half, r * 1.4], ...Array.from({ length: 13 }, (_, i) => {
+      const x = r * 1.5 * Math.sin(((i - 6) / 6) * (Math.PI / 2));
+      return [x, bulge(x), i && i < 12 ? 1 : 0];
+    }), [half, r * 1.4], [half, 0]];
+    put(piece, centre, S(G.lathe(meridian, F, P, { steps: 24, smooth: { slope: bulgeSlope, rows: 3 } }), { tone }) + Dots([...G.dotsOf(F, -half, r * 1.15, 6, P, { all: true }), ...G.dotsOf(F, half, r * 1.15, 6, P, { all: true })].filter((_, i) => i % 2 === 0), { size: 0.4, tone: "mid" }), { name: id, shapes: [record(A.body(F, meridian, { name: id, owner }))], bias: 0 });
+    // neck and top
+    const up = [0, 0, 1];
+    const NF = G.frameAlong(centre, up);
+    const s0 = crown - 0.2;
+    const s1 = crown + r * 1.5;
+    put(piece, G.add3(centre, [0, 0, (s0 + s1) / 2]), S(G.disc(s0, s1, r * 0.5, NF, P), { tone }), { name: `${id}.neck`, shapes: [record(A.disc(NF, s0, s1, r * 0.5, { name: `${id}.neck`, owner }))], bias: 0.2 });
+    const topZ = centre[2] + s1;
+    if (kind === "box") {
+      const plan = { x: centre[0] - r * 1.6, y: centre[1] - r * 1.6, w: r * 3.2, d: r * 3.2, r: 0.8 };
+      slabAt(piece, plan, topZ, r * 2.4, { tone }, { name: `${id}.actuator`, owner, bias: 0.3, bevel: 0.4, steps: 2, extra: Ln(k.planOutline(k.insetPlan(plan, 0.9), topZ + r * 2.4, P, 2), { tone: "faint" }) });
+    } else {
+      const wr = r * 1.7;
+      const stemId = `${id}.stem`;
+      const WF = G.frameOf([centre[0], centre[1], topZ], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
+      put(piece, [centre[0], centre[1], topZ + r * 0.8], S(G.disc(0, r * 1.6, 0.45, WF, P), { tone: "mid" }), { name: stemId, shapes: [record(A.disc(WF, 0, r * 1.6, 0.45, { name: stemId, owner }))], bias: 0.3 });
+      const wz = topZ + r * 1.6;
+      const spokes = [0, 1, 2, 3].map((i) => k.lineOnTop([centre[0] + Math.cos((i * Math.PI) / 2 + 0.4) * 0.45, centre[1] + Math.sin((i * Math.PI) / 2 + 0.4) * 0.45], [centre[0] + Math.cos((i * Math.PI) / 2 + 0.4) * wr, centre[1] + Math.sin((i * Math.PI) / 2 + 0.4) * wr], wz, P)).join("");
+      const wid = `${id}.wheel`;
+      put(piece, [centre[0], centre[1], wz], Ln(k.ring(centre[0], centre[1], wr, wz, P, 24), { tone }) + Ln(spokes, { tone: "mid" }), { name: wid, shapes: [record(A.disc(WF, r * 1.5, r * 1.7, wr, { name: wid, owner }))], bias: 0.4 });
+    }
+  }
+
+  // a pipe support: a post to the floor and a saddle cap the pipe rests on (for a horizontal run at height z along `axis`)
+  function supportAt(piece, [x, y, z], r, { axis = "x", name = "support", wide = 9 } = {}) {
+    const bottom = z - r;
+    const cap = axis === "x" ? { x: x - 2.4, y: y - wide / 2, w: 4.8, d: wide, r: 0.5 } : { x: x - wide / 2, y: y - 2.4, w: wide, d: 4.8, r: 0.5 };
+    slabAt(piece, cap, bottom - 2.2, 2.2, { tone: "mid" }, { name: `${name}.cap`, bevel: 0.3, steps: 2 });
+    slabAt(piece, { x: x - 2, y: y - 2, w: 4, d: 4, r: 0.5 }, 0, bottom - 2.2, { tone: "mid" }, { name: `${name}.post`, bevel: 0.3, steps: 2 });
+  }
+
+  return { alongNear, valveAt, supportAt, railing, faceWindowX, faceWindowY, polyAt, spins, spin, windowOn, padOn, k, G, A, P, R, V, KS, at, S, Ln, Dots, Faded, record, put, tubeItems, turned, band, flangeAt, pipe, slabAt, cylAt, ballAt, nameFor, NONE };
 }

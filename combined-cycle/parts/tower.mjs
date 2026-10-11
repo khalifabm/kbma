@@ -18,7 +18,7 @@ export function coolingTower(C) {
   C.cells = [];
   const cellW = (T.w - 12) / 2;
   for (let c = 0; c < 2; c++) {
-    const plan = { x: T.x + 4 + c * (cellW + 4), y: T.y + 4, w: cellW, d: T.d - 8, r: 2 };
+    const plan = { x: T.x + 4 + c * (cellW + 4), y: T.y + 4, w: cellW, d: T.d - 8, r: 0.01 };
     // louvered casing: horizontal slats on the two faces the viewer sees
     const louvres = [];
     for (let i = 0; i < 13; i++) {
@@ -35,7 +35,7 @@ export function coolingTower(C) {
       const y = plan.y + (plan.d * i) / 4;
       posts.push(k.segment([plan.x + plan.w, y, BASE_H], [plan.x + plan.w, y, BASE_H + CELL_H], P));
     }
-    slabAt("tower", plan, BASE_H, CELL_H, { tone: "mid" }, { name: "tower.cell", bevel: 0.8, steps: 3, extra: Ln(louvres.join(""), { tone: "lo" }) + Ln(posts.join(""), { tone: "faint" }) });
+    slabAt("tower", plan, BASE_H, CELL_H, { tone: "mid" }, { name: "tower.cell", bevel: 0.8, steps: 3, extra: Ln(louvres.join(""), { tone: "lo" }) + Ln(posts.join("") + k.rise([plan.x + plan.w, plan.y + plan.d], BASE_H, BASE_H + CELL_H, P), { tone: "faint" }) });
     // deck
     const deck = { ...plan, x: plan.x - 1, y: plan.y - 1, w: plan.w + 2, d: plan.d + 2 };
     slabAt("tower", deck, DECK_Z, 3, { tone: "mid" }, {
@@ -75,10 +75,10 @@ export function coolingTower(C) {
   const dist = { x: T.x + 5, y: c0.cy - 6, w: 12, d: 12, r: 1.5 };
   slabAt("tower", dist, DECK_Z + 3, 26, { tone: "hi" }, { name: "tower.distribution", bevel: 0.5, steps: 2, extra: Dots(k.corners(dist, 2).map(([x, y]) => at([x, y, DECK_Z + 29])), { size: 0.4 }) + Ln(k.sideSeam(dist, DECK_Z + 16, P, 2), { tone: "faint" }) });
   const HOUSE = { x: T.x - 36, y: T.y + T.d - 44, w: 30, d: 26, r: 2 };
-  slabAt("tower", HOUSE, 0, 16, { tone: "mid" }, { name: "tower.pumphouse", bevel: 0.7, steps: 3, extra: Ln(k.planOutline(k.insetPlan(HOUSE, 2.5), 16, P, 3), { tone: "faint" }) });
+  slabAt("tower", HOUSE, 0, 22, { tone: "mid" }, { name: "tower.pumphouse", bevel: 0.7, steps: 3, extra: Ln(k.planOutline(k.insetPlan(HOUSE, 2.5), 22, P, 3), { tone: "faint" }) });
   [[HOUSE.x + 8, HOUSE.y + 8], [HOUSE.x + 21, HOUSE.y + 8], [HOUSE.x + 8, HOUSE.y + 19], [HOUSE.x + 21, HOUSE.y + 19]].slice(0, 2).forEach(([x, y]) => {
-    const F = G.frameOf([x, y + 3, 16], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
-    turned("tower", F, [[0, 0], [0, 5.4], [1, 6, 1], [3, 6.2, 1], [14, 6.2, 1], [15, 6, 1], [17, 5.4], [17, 0]], {}, { name: "tower.motor", tone: "mid", smooth: false, extra: C.Faded(G.ribsOf(F, 3, 14, 6.2, 12, P, { fade: [0.1, 0.55] }), { tone: "lo" }) });
+    const F = G.frameOf([x, y + 3, 22], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
+    turned("tower", F, [[0, 0], [0, 5.4], [1, 6, 1], [3, 6.2, 1], [14, 6.2, 1], [15, 6, 1], [17, 5.4], [17, 0]], {}, { name: "tower.motor", tone: "mid", smooth: false, extra: C.Faded(G.ribsOf(F, 3, 14, 6.2, 12, P, { fade: [0.1, 0.55], seams: true }), { tone: "lo" }) });
   });
-  C.tower = { hotEnd: [dist.x + dist.w / 2, dist.y + dist.d / 2, 80], coldStart: [HOUSE.x + HOUSE.w / 2, HOUSE.y + HOUSE.d, 8], house: HOUSE };
+  C.tower = { hotEnd: [dist.x + dist.w / 2, dist.y + dist.d / 2, 80], coldStart: [HOUSE.x + HOUSE.w / 2, HOUSE.y + HOUSE.d, 11], house: HOUSE };
 }
